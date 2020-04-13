@@ -1,19 +1,9 @@
 ﻿using System;
-using System.Linq;
 using System.IO;
-using UnityEngine;
 using UnityEngine.SceneManagement;
-using IllusionPlugin;
-using EnhancedStreamChat.Chat;
-using EnhancedStreamChat.UI;
-using System.Threading.Tasks;
-using System.Collections;
 using System.Runtime.CompilerServices;
-using TMPro;
 using EnhancedStreamChat.Config;
-using StreamCore.Chat;
-using StreamCore.Utils;
-using StreamCore.YouTube;
+using IPA.Old;
 
 namespace EnhancedStreamChat
 {
