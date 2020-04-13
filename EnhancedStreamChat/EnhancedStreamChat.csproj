@@ -4,6 +4,7 @@
   <PropertyGroup>
     <BeatSaberLocation>D:\Steam\steamapps\common\Beat Saber\</BeatSaberLocation>
     <PluginVersion>2.2.0</PluginVersion>
+    <BeatSaberVersion>1.9</BeatSaberVersion>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -171,6 +172,46 @@
     <ReplaceFileText InputFilename="$(IntermediateSourcePath)Plugin.cs" OutputFilename="$(IntermediateSourcePath)Plugin.cs" MatchExpression="$PluginVersion$" ReplacementText="$(PluginVersion)" />
     <ReplaceFileText InputFilename="$(IntermediateSourcePath)AssemblyInfo.cs" OutputFilename="$(IntermediateSourcePath)AssemblyInfo.cs" MatchExpression="$PluginVersion$" ReplacementText="$(PluginVersion)" />
   </Target>
+  <!-- Package built DLLs into a zip -->
+  <Target Name="CreateZip" AfterTargets="AfterBuild" Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <ItemGroup>
+      <ZipFilesPlugins Include="$(OutDir)\$(TargetFileName)" />
+    </ItemGroup>
+    <Exec Command="git rev-parse HEAD &gt; $(IntermediateOutputPath)head" />
+    <ReadLinesFromFile File="$(IntermediateOutputPath)head">
+      <Output TaskParameter="Lines" PropertyName="FullCommitHash" />
+    </ReadLinesFromFile>
+    <Delete Files="$(IntermediateOutputPath)head" />
+    <PropertyGroup>
+      <CommitHash>$(FullCommitHash.Substring(0, 8))</CommitHash>
+    </PropertyGroup>
+    <Copy SourceFiles="@(ZipFilesPlugins)" DestinationFolder="$(IntermediateOutputPath)\zip\Plugins" />
+    <ZipDir ZipFileName="$(OutDir)\$(ProjectName)-$(PluginVersion)-bs$(BeatSaberVersion)-$(CommitHash).zip" DirectoryName="$(IntermediateOutputPath)\zip" />
+  </Target>
+  <!-- Source: https://stackoverflow.com/a/38127938 -->
+  <UsingTask TaskName="ZipDir" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v12.0.dll">
+    <ParameterGroup>
+      <ZipFileName ParameterType="System.String" Required="true" />
+      <DirectoryName ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Reference Include="System.IO.Compression.FileSystem" />
+      <Using Namespace="System.IO.Compression" />
+      <Code Type="Fragment" Language="cs"><![CDATA[
+        try
+        {
+          Log.LogMessage(string.Format("Zipping Directory {0} to {1}", DirectoryName, ZipFileName));
+          ZipFile.CreateFromDirectory( DirectoryName, ZipFileName );
+          return true;
+        }
+        catch(Exception ex)
+        {
+          Log.LogErrorFromException(ex);
+          return false;
+        }
+      ]]></Code>
+    </Task>
+  </UsingTask>
   <!-- Source: https://stackoverflow.com/a/22571621 -->
   <UsingTask TaskName="ReplaceFileText" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
     <ParameterGroup>
