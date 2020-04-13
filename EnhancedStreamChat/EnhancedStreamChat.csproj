@@ -144,7 +144,11 @@
     <EmbeddedResource Include="Resources\**\*" />
   </ItemGroup>
   <ItemGroup>
-    <ToCompile Include="**\*.cs" Exclude="bin\**\*;obj\**\*" />
+    <Compile Include="**\*.cs" Exclude="bin\**\*;obj\**\*;Plugin.cs;Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ToCompile Include="Plugin.cs"/>
+    <ToCompile Include="Properties\AssemblyInfo.cs"/>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
@@ -165,7 +169,7 @@
       <Output TaskParameter="CopiedFiles" ItemName="Compile" />
     </Copy>
     <ReplaceFileText InputFilename="$(IntermediateSourcePath)Plugin.cs" OutputFilename="$(IntermediateSourcePath)Plugin.cs" MatchExpression="$PluginVersion$" ReplacementText="$(PluginVersion)" />
-    <ReplaceFileText InputFilename="$(IntermediateSourcePath)Properties\AssemblyInfo.cs" OutputFilename="$(IntermediateSourcePath)Properties\AssemblyInfo.cs" MatchExpression="$PluginVersion$" ReplacementText="$(PluginVersion)" />
+    <ReplaceFileText InputFilename="$(IntermediateSourcePath)AssemblyInfo.cs" OutputFilename="$(IntermediateSourcePath)AssemblyInfo.cs" MatchExpression="$PluginVersion$" ReplacementText="$(PluginVersion)" />
   </Target>
   <!-- Source: https://stackoverflow.com/a/22571621 -->
   <UsingTask TaskName="ReplaceFileText" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
