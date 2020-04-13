@@ -3,6 +3,7 @@
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <BeatSaberLocation>D:\Steam\steamapps\common\Beat Saber\</BeatSaberLocation>
+    <PluginVersion>2.2.0</PluginVersion>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -51,11 +52,8 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(BeatSaberLocation)Beat Saber_Data\Managed\HMUI.dll</HintPath>
     </Reference>
-    <Reference Include="IllusionInjector, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>$(BeatSaberLocation)Beat Saber_Data\Managed\IllusionInjector.dll</HintPath>
-    </Reference>
-    <Reference Include="IllusionPlugin">
-      <HintPath>$(BeatSaberLocation)Beat Saber_Data\Managed\IllusionPlugin.dll</HintPath>
+    <Reference Include="IPA.Loader">
+      <HintPath>$(BeatSaberLocation)Beat Saber_Data\Managed\IPA.Loader.dll</HintPath>
     </Reference>
     <Reference Include="MainAssembly, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -141,26 +139,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(BeatSaberLocation)Beat Saber_Data\Managed\VRUI.dll</HintPath>
     </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Chat\ChatMessage.cs" />
-    <Compile Include="Chat\MessageParser.cs" />
-    <Compile Include="Config\ChatConfig.cs" />
-    <Compile Include="Images\EmojiUtils.cs" />
-    <Compile Include="Images\ImageDefinitions.cs" />
-    <Compile Include="Images\LockedBitmap.cs" />
-    <Compile Include="Images\TwitchCheermote.cs" />
-    <Compile Include="UI\ColorExtensions.cs" />
-    <Compile Include="Chat\ChatMover.cs" />
-    <Compile Include="Chat\LockToggle.cs" />
-    <Compile Include="Images\AnimationController.cs" />
-    <Compile Include="Images\ImageDownloader.cs" />
-    <Compile Include="Images\AnimationDecoder.cs" />
-    <Compile Include="Chat\ChatHandler.cs" />
-    <Compile Include="UI\Drawing.cs" />
-    <Compile Include="Plugin.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="UI\Settings.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\LockedIcon.png" />
@@ -3290,12 +3268,50 @@
   <ItemGroup>
     <EmbeddedResource Include="Resources\Settings.bsml" />
   </ItemGroup>
+  <ItemGroup>
+    <ToCompile Include="**\*.cs" Exclude="bin\**\*;obj\**\*" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>copy /Y "$(TargetDir)$(TargetFileName)" "$(BeatSaberLocation)Plugins"
 ::copy /Y "$(TargetDir)$(TargetFileName)" "C:\Beat Saber\Plugins"</PostBuildEvent>
   </PropertyGroup>
-  <PropertyGroup>
-    <PreBuildEvent>"$(ProjectDir)..\..\PluginVersionSetter.exe" "$(ProjectDir)Properties\AssemblyInfo.cs" "$(ProjectDir)Plugin.cs"</PreBuildEvent>
-  </PropertyGroup>
+  <!-- Clean output directories before build -->
+  <Target Name="CleanOutputDirs" BeforeTargets="BeforeBuild">
+    <RemoveDir Directories="$(OutDir)" />
+    <RemoveDir Directories="$(IntermediateOutputPath)" />
+  </Target>
+  <!-- Replace strings in source files -->
+  <Target Name="BeforeBuild">
+    <PropertyGroup>
+      <IntermediateSourcePath>$(IntermediateOutputPath)src\</IntermediateSourcePath>
+    </PropertyGroup>
+    <Copy SourceFiles="@(ToCompile)" DestinationFiles="@(ToCompile->'$(IntermediateSourcePath)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true">
+      <Output TaskParameter="CopiedFiles" ItemName="Compile" />
+    </Copy>
+    <ReplaceFileText InputFilename="$(IntermediateSourcePath)Plugin.cs" OutputFilename="$(IntermediateSourcePath)Plugin.cs" MatchExpression="$PluginVersion$" ReplacementText="$(PluginVersion)" />
+    <ReplaceFileText InputFilename="$(IntermediateSourcePath)Properties\AssemblyInfo.cs" OutputFilename="$(IntermediateSourcePath)Properties\AssemblyInfo.cs" MatchExpression="$PluginVersion$" ReplacementText="$(PluginVersion)" />
+  </Target>
+  <!-- Source: https://stackoverflow.com/a/22571621 -->
+  <UsingTask TaskName="ReplaceFileText" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+    <ParameterGroup>
+      <InputFilename ParameterType="System.String" Required="true" />
+      <OutputFilename ParameterType="System.String" Required="true" />
+      <MatchExpression ParameterType="System.String" Required="true" />
+      <ReplacementText ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Reference Include="System.Core" />
+      <Using Namespace="System" />
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.Text.RegularExpressions" />
+      <Code Type="Fragment" Language="cs"><![CDATA[
+          Log.LogMessage(string.Format("Replacing {0} in {1} to {2}", MatchExpression, InputFilename, ReplacementText));
+          File.WriteAllText(
+            OutputFilename,
+            File.ReadAllText(InputFilename).Replace(MatchExpression, ReplacementText)
+          );
+        ]]></Code>
+    </Task>
+  </UsingTask>
 </Project>
