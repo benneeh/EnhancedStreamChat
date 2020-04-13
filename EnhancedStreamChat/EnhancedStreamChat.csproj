@@ -3,7 +3,7 @@
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <BeatSaberLocation>D:\Steam\steamapps\common\Beat Saber\</BeatSaberLocation>
-    <PluginVersion>2.2.0</PluginVersion>
+    <PluginVersion>2.2.1</PluginVersion>
     <BeatSaberVersion>1.9</BeatSaberVersion>
   </PropertyGroup>
   <PropertyGroup>
