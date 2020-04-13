@@ -205,8 +205,8 @@ namespace EnhancedStreamChat
                             {
                                 try
                                 {
-                                    var ret = (bool)filter?.DynamicInvoke(messageToSend.origMessage);
-                                    if (ret)
+                                    var ret = (bool?)filter?.DynamicInvoke(messageToSend.origMessage);
+                                    if (ret ?? false)
                                         return;
                                 }
                                 catch (Exception ex)
