@@ -36,7 +36,7 @@ namespace EnhancedStreamChat.UI
             set
             {
                 // Only allow setting our custom image material from our own assembly, incase anything else tries to set it so it doensn't break the animation
-                if(Assembly.GetCallingAssembly() == Assembly.GetExecutingAssembly())
+                if (Assembly.GetCallingAssembly() == Assembly.GetExecutingAssembly())
                     base.material = value;
             }
         }
@@ -87,6 +87,7 @@ namespace EnhancedStreamChat.UI
         internal static readonly float badgeEmojiHeight = 80f;
         internal static readonly float emoteHeight = 120f;
         public static float imageSpacingWidth;
+        private static Regex htmlRegex = new Regex("<color=#.*><b>(.*)</b></color>", RegexOptions.Compiled);
 
         public static bool MaterialsCached
         {
@@ -118,7 +119,7 @@ namespace EnhancedStreamChat.UI
         {
             get
             {
-                if(!_assets)
+                if (!_assets)
                     _assets = AssetBundle.LoadFromMemory(Utilities.GetResource(Assembly.GetExecutingAssembly(), "EnhancedStreamChat.Resources.Assets"));
                 return _assets;
             }
@@ -216,7 +217,7 @@ namespace EnhancedStreamChat.UI
 
             return tmpText;
         }
-        
+
         public static void OverlayImage(CustomText currentMessage, ImageInfo imageInfo)
         {
             CachedSpriteData cachedTextureData = imageInfo.cachedSprite;
@@ -226,7 +227,8 @@ namespace EnhancedStreamChat.UI
                 return;
 
             bool animatedEmote = cachedTextureData.animInfo != null;
-            foreach (int i in EmojiUtilities.IndexOfAll(currentMessage.text, Char.ConvertFromUtf32(imageInfo.swapChar)))
+            var messageWithoutHtml = htmlRegex.Replace(currentMessage.text, (m) => m.Groups[1].Value);
+            foreach (int i in EmojiUtilities.IndexOfAll(messageWithoutHtml, Char.ConvertFromUtf32(imageInfo.swapChar)))
             {
                 CustomImage image = null, shadow = null;
                 try
@@ -239,7 +241,7 @@ namespace EnhancedStreamChat.UI
                         image.imageType = imageInfo.imageType;
                         image.sprite = cachedTextureData.sprite;
                         image.preserveAspect = false;
-                        if(image.sprite)
+                        if (image.sprite)
                             image.sprite.texture.wrapMode = TextureWrapMode.Clamp;
 
                         image.rectTransform.SetParent(currentMessage.rectTransform, false);
