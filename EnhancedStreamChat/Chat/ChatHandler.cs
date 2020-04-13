@@ -165,64 +165,73 @@ namespace EnhancedStreamChat
 
         public void Update()
         {
-            if (Drawing.MaterialsCached)
+            try
             {
-                HandleStatusMessages();
-
-                if (_configChanged)
-                    OnConfigChanged();
-
-                // Make sure to delete any purged messages right away
-                if (_timeoutQueue.Count > 0 && _timeoutQueue.TryDequeue(out var id))
-                    PurgeChatMessagesInternal(id);
-
-                if (_waitForFrames > 0)
+                if (Drawing.MaterialsCached)
                 {
-                    _waitForFrames--;
-                    return;
-                }
+                    HandleStatusMessages();
 
-                //// Wait try to display any new chat messages if our fps is tanking
-                //float fps = 1.0f / Time.deltaTime;
-                //if (!Plugin.Instance.IsAtMainMenu && fps < XRDevice.refreshRate - 5)
-                //    return;
+                    if (_configChanged)
+                        OnConfigChanged();
 
-                // Display any messages that we've cached all the resources for and prepared for rendering
-                if (RenderQueue.Count > 0 && !_messageRendering)
-                {
-                    if (RenderQueue.TryDequeue(out var messageToSend))
+                    // Make sure to delete any purged messages right away
+                    if (_timeoutQueue.Count > 0 && _timeoutQueue.TryDequeue(out var id))
+                        PurgeChatMessagesInternal(id);
+
+                    if (_waitForFrames > 0)
                     {
-                        if (ChatConfig.instance.FilterBroadcasterMessages && (messageToSend.origMessage.user.Twitch.isBroadcaster || messageToSend.origMessage.user.YouTube.isChatOwner))
-                            return;
-                        if (ChatConfig.instance.FilterCommandMessages && messageToSend.origMessage.message.StartsWith("!"))
-                            return;
-                        if (ChatConfig.instance.FilterSelfMessages && messageToSend.origMessage.user.id == TwitchWebSocketClient.OurTwitchUser.id)
-                            return;
+                        _waitForFrames--;
+                        return;
+                    }
 
-                        if (ChatMessageFilters != null)
+                    //// Wait try to display any new chat messages if our fps is tanking
+                    //float fps = 1.0f / Time.deltaTime;
+                    //if (!Plugin.Instance.IsAtMainMenu && fps < XRDevice.refreshRate - 5)
+                    //    return;
+
+                    // Display any messages that we've cached all the resources for and prepared for rendering
+                    if (RenderQueue.Count > 0 && !_messageRendering)
+                    {
+                        if (RenderQueue.TryDequeue(out var messageToSend))
                         {
-                            foreach (var filter in ChatMessageFilters.GetInvocationList())
+                            if (ChatConfig.instance.FilterBroadcasterMessages && (messageToSend.origMessage.user.Twitch.isBroadcaster || messageToSend.origMessage.user.YouTube.isChatOwner))
+                                return;
+                            if (ChatConfig.instance.FilterCommandMessages && messageToSend.origMessage.message.StartsWith("!"))
+                                return;
+                            if (ChatConfig.instance.FilterSelfMessages && messageToSend.origMessage.user.id == TwitchWebSocketClient.OurTwitchUser.id)
+                                return;
+
+                            if (ChatMessageFilters != null)
                             {
-                                try
+                                foreach (var filter in ChatMessageFilters.GetInvocationList())
                                 {
-                                    var ret = (bool?)filter?.DynamicInvoke(messageToSend.origMessage);
-                                    if (ret ?? false)
-                                        return;
-                                }
-                                catch (Exception ex)
-                                {
-                                    Plugin.Log(ex.ToString());
+                                    try
+                                    {
+                                        var ret = (bool?) filter?.DynamicInvoke(messageToSend.origMessage);
+                                        if (ret ?? false)
+                                            return;
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Plugin.Log(ex.ToString());
+                                    }
                                 }
                             }
+
+                            StartCoroutine(AddNewChatMessage(messageToSend.displayMsg, messageToSend));
                         }
-                        StartCoroutine(AddNewChatMessage(messageToSend.displayMsg, messageToSend));
+                    }
+
+                    // Save images to file when we're at the main menu
+                    else if (Globals.IsAtMainMenu && ImageDownloader.ImageSaveQueue.Count > 0 && ImageDownloader.ImageSaveQueue.TryDequeue(out var saveInfo))
+                    {
+                        File.WriteAllBytes(saveInfo.path, saveInfo.data);
                     }
                 }
-                // Save images to file when we're at the main menu
-                else if (Globals.IsAtMainMenu && ImageDownloader.ImageSaveQueue.Count > 0 && ImageDownloader.ImageSaveQueue.TryDequeue(out var saveInfo))
-                {
-                    File.WriteAllBytes(saveInfo.path, saveInfo.data);
-                }
+            }
+            catch(Exception ex)
+            {
+                Plugin.Log(ex.ToString());
             }
         }
 

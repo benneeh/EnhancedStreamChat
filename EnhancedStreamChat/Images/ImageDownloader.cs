@@ -52,7 +52,7 @@ namespace EnhancedStreamChat.Textures
         {
             get
             {
-                if(height > 0)
+                if (height > 0)
                     return width / height;
                 return 1;
             }
@@ -138,7 +138,7 @@ namespace EnhancedStreamChat.Textures
         private ConcurrentQueue<TextureDownloadInfo> _imageDownloadQueue = new ConcurrentQueue<TextureDownloadInfo>();
         private ConcurrentQueue<TextureDownloadInfo> _animationDownloadQueue = new ConcurrentQueue<TextureDownloadInfo>();
         public static ImageDownloader Instance = null;
-        
+
 
         public static void OnLoad()
         {
@@ -151,7 +151,7 @@ namespace EnhancedStreamChat.Textures
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            
+
             StartCoroutine(ProcessQueue());
             StartCoroutine(ProcessAnimQueue());
         }
@@ -166,7 +166,7 @@ namespace EnhancedStreamChat.Textures
 
             StartCoroutine(GetEmotes());
         }
-        
+
         public static IEnumerator GetEmotes()
         {
             yield return GetTwitchGlobalBadges();
@@ -178,13 +178,13 @@ namespace EnhancedStreamChat.Textures
             yield return GetFFZChannelEmotes();
             yield return PreloadAnimatedEmotes();
         }
-        
+
         private static IEnumerator ProcessQueue()
         {
             var waitForEmote = new WaitUntil(() => Instance._imageDownloadQueue.Count > 0);
-            while(!Globals.IsApplicationExiting)
+            while (!Globals.IsApplicationExiting)
             {
-                if(Instance._imageDownloadQueue.Count == 0)
+                if (Instance._imageDownloadQueue.Count == 0)
                     yield return waitForEmote;
 
                 // Download any images that aren't animated
@@ -215,13 +215,13 @@ namespace EnhancedStreamChat.Textures
                 }
             }
         }
-        
+
         private static IEnumerator ProcessAnimQueue()
         {
             var waitForAnimatedEmote = new WaitUntil(() => Instance._animationDownloadQueue.Count > 0);
             while (!Globals.IsApplicationExiting)
             {
-                if(Instance._animationDownloadQueue.Count == 0)
+                if (Instance._animationDownloadQueue.Count == 0)
                     yield return waitForAnimatedEmote;
 
                 // Download animated images separately, so we don't hold up static emotes while processing animations
@@ -243,7 +243,7 @@ namespace EnhancedStreamChat.Textures
 
         public void Queue(TextureDownloadInfo emote)
         {
-            if(emote.type == ImageType.BTTV_Animated || emote.type == ImageType.Cheermote)
+            if (emote.type == ImageType.BTTV_Animated || emote.type == ImageType.Cheermote)
                 _animationDownloadQueue.Enqueue(emote);
             else
                 _imageDownloadQueue.Enqueue(emote);
@@ -279,7 +279,7 @@ namespace EnhancedStreamChat.Textures
                 byte[] animData = null;
                 int _waitForFrames = 10;
                 bool localPathExists = ImageExistsLocally(ref imagePath, imageDownloadInfo, out var localFilePath);
-                
+
                 yield return Utilities.Download(imagePath, Utilities.DownloadType.Raw, null, (web) =>
                 {
                     animData = web.downloadHandler.data;
@@ -321,7 +321,7 @@ namespace EnhancedStreamChat.Textures
                     {
                         sprite = Utilities.LoadSpriteFromResources($"EnhancedStreamChat.Resources.Emojis.{imageDownloadInfo.spriteIndex.ToLower()}");
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         Plugin.Log($"An error occurred while trying to load emoji from resources. {ex.ToString()}");
                         yield break;
@@ -338,7 +338,7 @@ namespace EnhancedStreamChat.Textures
                 yield return new WaitUntil(() => _waitForFrames-- == 0);
             }
         }
-        
+
         public static IEnumerator PreloadAnimatedEmotes()
         {
             int count = 0;
@@ -466,19 +466,16 @@ namespace EnhancedStreamChat.Textures
             yield return Utilities.Download("https://api.betterttv.net/2/emotes", Utilities.DownloadType.Raw, null, (web) =>
             {
                 JSONNode json = JSON.Parse(web.downloadHandler.text);
-                if (json["status"].AsInt == 200)
+                if (json["emotes"] != null)
                 {
                     JSONArray emotes = json["emotes"].AsArray;
                     foreach (JSONObject o in emotes)
                     {
-                        if (o["channel"] == null)
-                        {
-                            if (o["imageType"] != "gif")
-                                BTTVEmoteIDs.TryAdd(o["code"], o["id"]);
-                            else
-                                BTTVAnimatedEmoteIDs.TryAdd(o["code"], o["id"]);
-                            emotesCached++;
-                        }
+                        if (o["imageType"] != "gif")
+                            BTTVEmoteIDs.TryAdd(o["code"], o["id"]);
+                        else
+                            BTTVAnimatedEmoteIDs.TryAdd(o["code"], o["id"]);
+                        emotesCached++;
                     }
                 }
             });
@@ -492,7 +489,7 @@ namespace EnhancedStreamChat.Textures
             yield return Utilities.Download($"https://api.betterttv.net/2/channels/{TwitchLoginConfig.Instance.TwitchChannelName}", Utilities.DownloadType.Raw, null, (web) =>
             {
                 JSONNode json = JSON.Parse(web.downloadHandler.text);
-                if (json["status"].AsInt == 200)
+                if (json["emotes"] != null)
                 {
                     JSONArray emotes = json["emotes"].AsArray;
                     foreach (JSONObject o in emotes)
@@ -507,7 +504,7 @@ namespace EnhancedStreamChat.Textures
             });
             Plugin.Log($"Web request completed, {emotesCached.ToString()} BTTV channel emotes now cached!");
         }
-        
+
         public static IEnumerator GetFFZGlobalEmotes()
         {
             Plugin.Log("Downloading FFZ global emote listing");
