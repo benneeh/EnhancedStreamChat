@@ -231,7 +231,7 @@ namespace EnhancedStreamChat.UI
                 CustomImage image = null, shadow = null;
                 try
                 {
-                    if (i > 0 && i < currentMessage.text.Count())
+                    if (i > 0 && i < currentMessage.text.Length)
                     {
                         image = ChatHandler.Instance.imagePool.Alloc();
                         image.cachedTextureData = cachedTextureData;
